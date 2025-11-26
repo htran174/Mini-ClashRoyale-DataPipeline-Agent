@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
+from .deck_type import summarize_deck_types
+
 
 def build_battles_dataframe(
     battles_normalized: List[Dict[str, Any]]
@@ -26,7 +28,6 @@ def build_battles_dataframe(
 
     df = pd.DataFrame(battles_normalized)
 
-    # Ensure columns exist even if missing in some entries
     for col in ["battle_time", "result", "my_cards", "opp_cards", "mode_name"]:
         if col not in df.columns:
             df[col] = None
@@ -124,11 +125,9 @@ def compute_card_performance(df: pd.DataFrame, min_games: int = 3) -> Dict[str, 
     for _, row in df.iterrows():
         result = row["result"]
 
-        # my cards
         for card in row.get("my_cards", []) or []:
             rows_my.append({"card": card, "result": result})
 
-        # opponent cards (we interpret from *their* perspective)
         for card in row.get("opp_cards", []) or []:
             if result == "win":
                 opp_result = "loss"
@@ -154,7 +153,7 @@ def compute_card_performance(df: pd.DataFrame, min_games: int = 3) -> Dict[str, 
     }
 
 
-# ---------- Deck-level stats ----------
+# ---------- Deck-level stats (exact deck lists) ----------
 
 
 def compute_deck_performance(
@@ -163,8 +162,7 @@ def compute_deck_performance(
     """
     Compute performance by my deck and opponent deck.
 
-    Deck key = sorted tuple of 8 card names, to treat decks with same cards
-    in different order as the same.
+    Deck key = sorted tuple of 8 card names.
     """
     my_decks: Dict[Tuple[str, ...], Dict[str, int]] = defaultdict(
         lambda: {"games": 0, "wins": 0, "losses": 0, "draws": 0}
@@ -178,7 +176,6 @@ def compute_deck_performance(
         my_key = tuple(sorted(b.get("my_cards", [])))
         opp_key = tuple(sorted(b.get("opp_cards", [])))
 
-        # my decks
         ms = my_decks[my_key]
         ms["games"] += 1
         if result == "win":
@@ -188,7 +185,6 @@ def compute_deck_performance(
         else:
             ms["draws"] += 1
 
-        # opponent decks (flip perspective)
         os = opp_decks[opp_key]
         os["games"] += 1
         if result == "win":
@@ -241,7 +237,7 @@ def compute_user_analytics(
     """
     Main entrypoint for user analytics (and also meta analytics).
 
-    Returns a dict shaped like:
+    Returns dict:
 
         {
           "summary": {...},
@@ -253,9 +249,9 @@ def compute_user_analytics(
           "worst_decks": [...],
           "tough_matchups": [...],
           "easy_matchups": [...],
-          "my_deck_types": [...],   # TODO Phase C extension
-          "opp_deck_types": [...],  # TODO Phase C extension
-          "plots": {},              # filled in by plotting utilities
+          "my_deck_types": [...],
+          "opp_deck_types": [...],
+          "plots": {...}
         }
     """
     df = build_battles_dataframe(battles_normalized)
@@ -265,6 +261,8 @@ def compute_user_analytics(
     deck_stats = compute_deck_performance(
         battles_normalized, min_games=min_deck_games
     )
+
+    my_deck_types, opp_deck_types = summarize_deck_types(battles_normalized)
 
     analytics: Dict[str, Any] = {
         "summary": summary,
@@ -276,10 +274,8 @@ def compute_user_analytics(
         "worst_decks": deck_stats["worst_decks"],
         "tough_matchups": deck_stats["tough_matchups"],
         "easy_matchups": deck_stats["easy_matchups"],
-        # Deck type classification to be added later in Phase C
-        "my_deck_types": [],
-        "opp_deck_types": [],
-        # Plot paths will be injected by plotting utilities
+        "my_deck_types": my_deck_types,
+        "opp_deck_types": opp_deck_types,
         "plots": {},
     }
 
