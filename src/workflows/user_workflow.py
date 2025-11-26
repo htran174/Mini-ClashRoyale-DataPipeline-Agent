@@ -6,6 +6,7 @@ from langgraph.graph import StateGraph, END
 from src.api.battles import get_player_battlelog
 from src.analytics.battle_filters import filter_and_normalize_ranked_1v1
 from src.analytics.user_analytics import compute_user_analytics
+from src.analytics.plots import generate_card_plots
 
 
 # ---------- LangGraph State Definition ----------
@@ -117,6 +118,35 @@ def compute_user_analytics_node(state: UserAnalyticsState) -> Dict[str, Any]:
     }
 
 
+# ---------- Node: generate_user_plots ----------
+
+
+def generate_user_plots_node(state: UserAnalyticsState) -> Dict[str, Any]:
+    """
+    Node:
+      - reads user_analytics
+      - generates card-level plots
+      - writes user_plots and updated user_analytics into state
+    """
+    analytics = state.get("user_analytics") or {}
+    if not analytics:
+        raise ValueError(
+            "user_analytics is required in state for generate_user_plots_node"
+        )
+
+    analytics_with_plots = generate_card_plots(analytics, prefix="user")
+
+    note = "Generated user card-level plots"
+    existing_notes = state.get("notes", []) or []
+    existing_notes.append(note)
+
+    return {
+        "user_analytics": analytics_with_plots,
+        "user_plots": analytics_with_plots.get("plots", {}),
+        "notes": existing_notes,
+    }
+
+
 # ---------- Graph Builder ----------
 
 
@@ -124,14 +154,13 @@ def build_user_analytics_graph():
     """
     Build the Phase 1 LangGraph workflow.
 
-    Current pipeline (D3):
+    Pipeline (D4):
 
         fetch_battlelog
             -> filter_and_normalize
             -> compute_user_analytics
+            -> generate_user_plots
             -> END
-
-    Next step (D4) will add generate_user_plots after analytics.
     """
     graph = StateGraph(UserAnalyticsState)
 
@@ -139,11 +168,13 @@ def build_user_analytics_graph():
     graph.add_node("fetch_battlelog", fetch_battlelog_node)
     graph.add_node("filter_and_normalize", filter_and_normalize_node)
     graph.add_node("compute_user_analytics", compute_user_analytics_node)
+    graph.add_node("generate_user_plots", generate_user_plots_node)
 
     # Entry / edges
     graph.set_entry_point("fetch_battlelog")
     graph.add_edge("fetch_battlelog", "filter_and_normalize")
     graph.add_edge("filter_and_normalize", "compute_user_analytics")
-    graph.add_edge("compute_user_analytics", END)
+    graph.add_edge("compute_user_analytics", "generate_user_plots")
+    graph.add_edge("generate_user_plots", END)
 
     return graph.compile()
