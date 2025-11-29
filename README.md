@@ -1,4 +1,4 @@
-# Clash Royale Data Pipeline + Coaching Agent
+# Clash Royale Data Pipeline & Coaching Agent
 
 A three-phase analytics & coaching system for **Clash Royale** built with:
 
@@ -15,12 +15,12 @@ The agent:
 
 ---
 # Table of Contents
-- [Overview](#high-level-architecture)
+- [Overview -High-Level Architecture](#high-level-architecture)
 - [Phase 0 — Meta Analytics](#phase-0--meta-analytics)
 - [Phase 1 — User Analytics](#phase-1--user-analytics)
 - [Phase 2 — Q&A Coaching Workflow](#phase-2--qa-coaching-workflow)
 - [Combined Coach Workflow](#combined-coach-workflow)
-- [Deck Classification](#data-cleaning--deck-classification)
+- [Classification](#data-cleaning--deck-classification)
 - [Quickstart Guide](#quickstart-guide)
 
 ---
@@ -294,3 +294,6 @@ Before analytics, the system maps every deck into **six archetypes** using a sim
 - **Hybrid**
 
 This standardization keeps Phase 0 meta analytics consistent with Phase 1 user analytics, ensuring cleaner matchup and win-rate calculations.
+
+---
+# Quickstart Quide
