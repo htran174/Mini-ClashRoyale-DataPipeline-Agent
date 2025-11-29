@@ -276,7 +276,7 @@ Flow:
 
 ---
 
-### 🔄 Combined Coach Workflow Diagram
+### Combined Coach Workflow Diagram
 
 ![Combined Coach Graph](docs/images/coach_graph.png)
 
