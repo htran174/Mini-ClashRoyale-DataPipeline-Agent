@@ -538,7 +538,7 @@ class CoachState(TypedDict, total=False):
     # phase 0 outputs
     meta_analytics: Dict[str, Any]
     meta_llm_tables: Dict[str, Any]
-    meta_table: Any  # whatever type your meta_table is
+    meta_table: Any
 
     # phase 1 outputs
     user_analytics: Dict[str, Any]
@@ -557,7 +557,7 @@ def ensure_meta(state: CoachState) -> CoachState:
     if "meta_analytics" in state and "meta_llm_tables" in state:
         return state
 
-    # Mimic your notebook: meta_graph.invoke({}, config={"recursion_limit": 80})
+    # config={"recursion_limit": 80})
     meta_state = _meta_graph.invoke({}, config={"recursion_limit": 80})
 
     return {
@@ -573,7 +573,6 @@ def ask_for_tag(state: CoachState) -> CoachState:
         return state
 
     tag = interrupt("Please enter your Clash Royale player tag (without #):")
-    # When you resume in Studio, `tag` will be whatever you typed
     return {**state, "player_tag": tag}
 
 def ensure_user(state: CoachState) -> CoachState:
@@ -631,7 +630,6 @@ def qa_answer(state: CoachState) -> CoachState:
 
     qna_state = _qna_graph.invoke(qna_input)
 
-    # Adjust these keys if your phase2 graph returns something slightly different
     answer = qna_state.get("answer", "(No 'answer' key returned)")
     notes = qna_state.get("notes", [])
 
@@ -670,10 +668,9 @@ def build_coach_graph():
     graph.add_edge("ask_for_tag", "ensure_user")
     graph.add_edge("ensure_user", "ask_for_question")
 
-    # NEW: conditional routing after asking the question
+    # conditional routing after asking the question
     graph.add_conditional_edges(
-        "ask_for_question",
-        route_after_question,
+        "ask_for_question", route_after_question,
         {
             "qa_answer": "qa_answer",
             "end": END,

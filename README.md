@@ -76,7 +76,7 @@ The project is organized into **three phases** plus a **top-level coach**:
    - Calls an expert model to produce a **coaching answer**.
 
 4. **Coach Graph**  
-   - Ensures Phase 0 meta data exists (once per session).  
+   - Ensures Phase 0 meta data exists.  
    - Interrupts to ask for a **player tag**.  
    - Runs Phase 1 analytics for that tag.  
    - Interrupts to ask for a **question**.  
